@@ -1,10 +1,11 @@
 // app/properties/page.jsx
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import PropertyList from '../../components/PropertyList'
-import SearchFilters from '../../components/SearchFilter'
+import SearchFilters from '../../components/SearchFilters'
+import LoadingSpinner from '../../components/LoadingSpinner'
 
-export default function PropertiesPage() {
+function PropertiesContent() {
   const [properties, setProperties] = useState([])
   const [favorites, setFavorites] = useState([])
   const [searchFilters, setSearchFilters] = useState({
@@ -65,5 +66,13 @@ export default function PropertiesPage() {
         />
       </div>
     </div>
+  )
+}
+
+export default function PropertiesPage() {
+  return (
+    <Suspense fallback={<LoadingSpinner text="Loading properties..." />}>
+      <PropertiesContent />
+    </Suspense>
   )
 }

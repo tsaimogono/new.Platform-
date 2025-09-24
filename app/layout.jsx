@@ -3,6 +3,8 @@ import './globals.css'
 import Navbar from '../components/ui/Navbar'
 import Footer from '../components/ui/Footer'
 import AuthProvider from '../components/AuthProvider'
+import { Suspense } from 'react'
+import LoadingSpinner from '../components/LoadingSpinner'
 
 export const metadata = {
   title: 'Real Estate Platform',
@@ -14,9 +16,11 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body>
         <AuthProvider>
-          <Navbar />
-          {children}
-          <Footer />
+          <Suspense fallback={<LoadingSpinner />}>
+            <Navbar />
+            {children}
+            <Footer />
+          </Suspense>
         </AuthProvider>
       </body>
     </html>

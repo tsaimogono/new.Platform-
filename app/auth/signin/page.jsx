@@ -1,23 +1,24 @@
 // app/auth/signin/page.jsx
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { signIn, useSession } from 'next-auth/react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
-export default function SignIn() {
+// Wrap the component that uses useSearchParams in Suspense
+function SignInContent() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
-  const searchParams = useSearchParams()
   const { data: session, status } = useSession()
 
   useEffect(() => {
     // Check for success message from registration
-    const message = searchParams.get('message')
+    const urlParams = new URLSearchParams(window.location.search)
+    const message = urlParams.get('message')
     if (message) {
       setSuccess(message)
     }
@@ -26,7 +27,7 @@ export default function SignIn() {
     if (session) {
       router.push(`/dashboard/${session.user.role}`)
     }
-  }, [session, router, searchParams])
+  }, [session, router])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -52,7 +53,10 @@ export default function SignIn() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-md w-full">
-          <div className="text-center">Loading...</div>
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading...</p>
+          </div>
         </div>
       </div>
     )
@@ -122,7 +126,7 @@ export default function SignIn() {
             <button
               type="submit"
               disabled={isLoading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
             >
               {isLoading ? 'Signing in...' : 'Sign in'}
             </button>
@@ -130,5 +134,21 @@ export default function SignIn() {
         </form>
       </div>
     </div>
+  )
+}
+
+// Main component with Suspense boundary
+export default function SignInPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    }>
+      <SignInContent />
+    </Suspense>
   )
 }
