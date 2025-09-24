@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import PropertyList from '../../../components/PropertyList.jsx'
-import SearchFilters from '../../../components/SearchFilter'
+import SearchFilters from '../../../components/SearchFilters'
 
 export default function ClientDashboard() {
   const { data: session, status } = useSession()
