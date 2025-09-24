@@ -1,11 +1,10 @@
 // app/properties/page.jsx
 'use client'
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect } from 'react'
 import PropertyList from '../../components/PropertyList'
 import SearchFilters from '../../components/SearchFilters'
-import LoadingSpinner from '../../components/LoadingSpinner'
 
-function PropertiesContent() {
+export default function PropertiesPage() {
   const [properties, setProperties] = useState([])
   const [favorites, setFavorites] = useState([])
   const [searchFilters, setSearchFilters] = useState({
@@ -16,6 +15,7 @@ function PropertiesContent() {
     bedrooms: ''
   })
   const [error, setError] = useState('')
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     fetchProperties()
@@ -23,6 +23,7 @@ function PropertiesContent() {
 
   const fetchProperties = async () => {
     try {
+      setIsLoading(true)
       const queryParams = new URLSearchParams()
       Object.entries(searchFilters).forEach(([key, value]) => {
         if (value) queryParams.append(key, value)
@@ -32,6 +33,7 @@ function PropertiesContent() {
       if (response.ok) {
         const data = await response.json()
         setProperties(data)
+        setError('')
       } else {
         setError('Failed to fetch properties')
         setProperties([])
@@ -40,7 +42,22 @@ function PropertiesContent() {
       console.error('Error fetching properties:', error)
       setError('Error fetching properties')
       setProperties([])
+    } finally {
+      setIsLoading(false)
     }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex justify-center items-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading properties...</p>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -59,6 +76,9 @@ function PropertiesContent() {
       />
       
       <div className="mt-8">
+        <h2 className="text-2xl font-bold mb-4">
+          Available Properties ({properties.length})
+        </h2>
         <PropertyList 
           properties={properties} 
           favorites={favorites}
@@ -66,13 +86,5 @@ function PropertiesContent() {
         />
       </div>
     </div>
-  )
-}
-
-export default function PropertiesPage() {
-  return (
-    <Suspense fallback={<LoadingSpinner text="Loading properties..." />}>
-      <PropertiesContent />
-    </Suspense>
   )
 }
