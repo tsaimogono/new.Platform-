@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import PropertyList from '../../../components/PropertyList'
+import PropertyList from '../../../components/PropertyList.jsx'
 import SearchFilters from '../../../components/SearchFilter'
 
 export default function ClientDashboard() {

@@ -1,7 +1,7 @@
 // app/properties/page.jsx
 'use client'
 import { useState, useEffect } from 'react'
-import PropertyList from '../../components/PropertyList'
+import PropertyList from '../../components/PropertyList.jsx'
 import SearchFilters from '../../components/SearchFilters'
 
 export default function PropertiesPage() {

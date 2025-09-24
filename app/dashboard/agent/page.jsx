@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import PropertyForm from '../../../components/PropertyForm'
-import PropertyList from '../../../components/PropertyList'
+import PropertyList from '../../../components/PropertyList.jsx'
 
 export default function AgentDashboard() {
   const { data: session, status } = useSession()
