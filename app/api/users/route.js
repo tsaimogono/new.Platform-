@@ -39,25 +39,28 @@ export async function POST(request) {
     })
 
     // Create profile based on role
-    if (role === 'agent') {
-      await db.collection('profiles').insertOne({
-        userId: result.insertedId,
-        agencyName: '',
-        agencyDescription: '',
-        phone: '',
-        address: '',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      })
-    } else {
-      await db.collection('profiles').insertOne({
-        userId: result.insertedId,
-        phone: '',
-        preferences: {},
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      })
-    }
+   
+if (role === 'agent') {
+  await db.collection('profiles').insertOne({
+    userId: result.insertedId,
+    agencyName: '',
+    agencyDescription: '',
+    phone: '',
+    address: '',
+    profilePicture: '',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  })
+} else {
+  await db.collection('profiles').insertOne({
+    userId: result.insertedId,
+    phone: '',
+    profilePicture: '',
+    preferences: {},
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  })
+}
 
     return new Response(JSON.stringify({ message: 'User created successfully' }), {
       status: 201,

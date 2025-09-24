@@ -151,15 +151,27 @@ export default function AgentDashboard() {
         <PropertyForm onSuccess={handlePropertyCreated} />
       )}
       
-      {activeTab === 'profile' && (
-        <div>
-          <h2 className="text-2xl font-bold mb-4">Agency Profile</h2>
-          
-          {profileError && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
-              {profileError}
-            </div>
-          )}
+     // In app/dashboard/agent/page.jsx, replace the profile section with:
+{activeTab === 'profile' && (
+  <div>
+    <h2 className="text-2xl font-bold mb-4">Agency Profile</h2>
+    
+    {profileError && (
+      <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
+        {profileError}
+      </div>
+    )}
+    
+    {profile ? (
+      <ProfileForm 
+        profile={profile} 
+        onUpdate={handleProfileUpdate} 
+      />
+    ) : (
+      <div>Loading profile...</div>
+    )}
+  </div>
+)}
           
           {profile ? (
             <ProfileForm 

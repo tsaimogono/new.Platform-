@@ -1,6 +1,6 @@
 // components/PropertyForm.jsx
 'use client'
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 
 export default function PropertyForm({ onSuccess, property }) {
   const [formData, setFormData] = useState(property || {
@@ -18,6 +18,8 @@ export default function PropertyForm({ onSuccess, property }) {
   })
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+  const [uploadingImages, setUploadingImages] = useState(false)
+  const fileInputRef = useRef(null)
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -41,6 +43,66 @@ export default function PropertyForm({ onSuccess, property }) {
       ...formData,
       amenities: updatedAmenities
     })
+  }
+
+  const handleImageUpload = async (e) => {
+    const files = Array.from(e.target.files)
+    if (files.length === 0) return
+
+    setUploadingImages(true)
+    setError('')
+
+    try {
+      const uploadPromises = files.map(async (file) => {
+        // Check file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+          throw new Error(`File ${file.name} is too large. Maximum size is 5MB.`)
+        }
+
+        // Check file type
+        if (!file.type.startsWith('image/')) {
+          throw new Error(`File ${file.name} is not an image.`)
+        }
+
+        const formData = new FormData()
+        formData.append('file', file)
+
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        })
+
+        if (!response.ok) {
+          throw new Error('Upload failed')
+        }
+
+        return response.json()
+      })
+
+      const results = await Promise.all(uploadPromises)
+      const newImageUrls = results.map(result => result.imageUrl)
+
+      setFormData(prev => ({
+        ...prev,
+        images: [...prev.images, ...newImageUrls]
+      }))
+
+    } catch (error) {
+      setError(error.message)
+    } finally {
+      setUploadingImages(false)
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+    }
+  }
+
+  const removeImage = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== index)
+    }))
   }
 
   const handleSubmit = async (e) => {
@@ -95,6 +157,71 @@ export default function PropertyForm({ onSuccess, property }) {
       )}
       
       <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Existing form fields... */}
+        
+        {/* Image Upload Section */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Property Images
+          </label>
+          
+          {/* Image Preview */}
+          {formData.images.length > 0 && (
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Uploaded Images ({formData.images.length})
+              </label>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {formData.images.map((imageUrl, index) => (
+                  <div key={index} className="relative group">
+                    <img 
+                      src={imageUrl} 
+                      alt={`Property image ${index + 1}`}
+                      className="w-full h-24 object-cover rounded-lg"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeImage(index)}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          {/* File Upload Input */}
+          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+            <input
+              type="file"
+              ref={fileInputRef}
+              multiple
+              accept="image/*"
+              onChange={handleImageUpload}
+              className="hidden"
+              id="property-images"
+            />
+            <label
+              htmlFor="property-images"
+              className="cursor-pointer block"
+            >
+              <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              <span className="mt-2 block text-sm font-medium text-gray-900">
+                {uploadingImages ? 'Uploading...' : 'Upload images'}
+              </span>
+              <span className="mt-1 block text-sm text-gray-500">
+                PNG, JPG, GIF up to 5MB each
+              </span>
+            </label>
+          </div>
+        </div>
+
+        {/* Rest of the form fields... */}
+        
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label htmlFor="title" className="block text-sm font-medium text-gray-700">
@@ -271,7 +398,7 @@ export default function PropertyForm({ onSuccess, property }) {
         <div>
           <button
             type="submit"
-            disabled={isLoading}
+            disabled={isLoading || uploadingImages}
             className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
           >
             {isLoading ? 'Saving...' : (property ? 'Update Property' : 'Add Property')}
