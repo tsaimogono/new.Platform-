@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "install:retry": "npm install --registry https://registry.npmjs.org/ --strict-ssl=false"
   },
   "dependencies": {
     "@auth/mongodb-adapter": "^3.10.0",
