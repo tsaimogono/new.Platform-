@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import { useSession } from 'next-auth/react'
-import Image from 'next/image'
-import ErrorBoundary from '../../../components/ErrorBoundary'
+import PropertyMap from '../../../components/PropertyMap'
+import StaticMap from '../../../components/StaticMap'
 
 export default function PropertyDetail() {
   const { id } = useParams()
@@ -13,6 +13,9 @@ export default function PropertyDetail() {
   const [favorites, setFavorites] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
+  const [activeMedia, setActiveMedia] = useState('images')
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0)
+  const [selectedVideoIndex, setSelectedVideoIndex] = useState(0)
 
   useEffect(() => {
     fetchProperty()
@@ -53,7 +56,6 @@ export default function PropertyDetail() {
 
   const handleToggleFavorite = async () => {
     if (!session) {
-      // Redirect to sign in or show message
       return
     }
     
@@ -67,7 +69,7 @@ export default function PropertyDetail() {
       })
       
       if (response.ok) {
-        fetchFavorites() // Refresh favorites
+        fetchFavorites()
       }
     } catch (error) {
       console.error('Error toggling favorite:', error)
@@ -77,7 +79,12 @@ export default function PropertyDetail() {
   if (isLoading) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <div className="text-center">Loading property details...</div>
+        <div className="flex justify-center items-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading property details...</p>
+          </div>
+        </div>
       </div>
     )
   }
@@ -93,28 +100,58 @@ export default function PropertyDetail() {
   }
 
   const isFavorite = favorites.includes(property._id)
+  const hasCoordinates = property.coordinates && property.coordinates.lat && property.coordinates.lng
+  const coordinates = hasCoordinates ? property.coordinates : null
+
+  const currentImage = property.images?.[selectedImageIndex]
+  const currentVideo = property.videos?.[selectedVideoIndex]
 
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
-        <div className="relative h-96">
-          {property.images && property.images.length > 0 ? (
-            <Image 
-              src={property.images[0]} 
-              alt={property.title || 'Property image'}
-              fill
-              className="object-cover"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-gray-400 bg-gray-200">
-              No Image Available
+        {/* Media Gallery */}
+        <div className="relative">
+          {/* Media Type Toggle */}
+          {(property.images?.length > 0 || property.videos?.length > 0) && (
+            <div className="absolute top-4 left-4 z-10 bg-white rounded-lg shadow-md">
+              {property.images?.length > 0 && (
+                <button
+                  onClick={() => {
+                    setActiveMedia('images')
+                    setSelectedImageIndex(0)
+                  }}
+                  className={`px-4 py-2 rounded-l-lg ${
+                    activeMedia === 'images' 
+                      ? 'bg-blue-600 text-white' 
+                      : 'bg-white text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  Images ({property.images.length})
+                </button>
+              )}
+              {property.videos?.length > 0 && (
+                <button
+                  onClick={() => {
+                    setActiveMedia('videos')
+                    setSelectedVideoIndex(0)
+                  }}
+                  className={`px-4 py-2 rounded-r-lg ${
+                    activeMedia === 'videos' 
+                      ? 'bg-blue-600 text-white' 
+                      : 'bg-white text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  Videos ({property.videos.length})
+                </button>
+              )}
             </div>
           )}
-          
+
+          {/* Favorite Button */}
           {session && session.user.role === 'client' && (
             <button
               onClick={handleToggleFavorite}
-              className="absolute top-4 right-4 p-3 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors"
+              className="absolute top-4 right-4 p-3 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors z-10"
               aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
             >
               <svg 
@@ -127,8 +164,83 @@ export default function PropertyDetail() {
               </svg>
             </button>
           )}
+
+          {/* Main Media Display */}
+          {activeMedia === 'images' && property.images && property.images.length > 0 ? (
+            <div className="h-96 relative">
+              <img 
+                src={currentImage} 
+                alt={property.title}
+                className="w-full h-full object-cover"
+              />
+              
+              {/* Image Navigation */}
+              {property.images.length > 1 && (
+                <>
+                  <button
+                    onClick={() => setSelectedImageIndex((prev) => (prev - 1 + property.images.length) % property.images.length)}
+                    className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white p-2 rounded-full shadow-md hover:bg-gray-100"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => setSelectedImageIndex((prev) => (prev + 1) % property.images.length)}
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white p-2 rounded-full shadow-md hover:bg-gray-100"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </>
+              )}
+            </div>
+          ) : activeMedia === 'videos' && property.videos && property.videos.length > 0 ? (
+            <div className="h-96 relative">
+              <video 
+                src={currentVideo}
+                className="w-full h-full object-cover"
+                controls
+                autoPlay
+                muted
+              />
+              
+              {/* Video Navigation */}
+              {property.videos.length > 1 && (
+                <>
+                  <button
+                    onClick={() => setSelectedVideoIndex((prev) => (prev - 1 + property.videos.length) % property.videos.length)}
+                    className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white p-2 rounded-full shadow-md hover:bg-gray-100"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => setSelectedVideoIndex((prev) => (prev + 1) % property.videos.length)}
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white p-2 rounded-full shadow-md hover:bg-gray-100"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </>
+              )}
+            </div>
+          ) : (
+            <div className="h-96 bg-gray-200 flex items-center justify-center">
+              <div className="text-gray-400 text-center">
+                <svg className="w-16 h-16 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <p>No {activeMedia} available</p>
+              </div>
+            </div>
+          )}
         </div>
-        
+
+        {/* Property Details */}
         <div className="p-6">
           <div className="flex justify-between items-start mb-4">
             <div>
@@ -184,18 +296,53 @@ export default function PropertyDetail() {
               </div>
             </div>
           )}
-          
-          <div>
-            <h2 className="text-xl font-semibold mb-3">Contact Information</h2>
-            <p className="text-gray-700">
-              Please contact the agent for more information about this property.
-            </p>
-            {property.agentId && (
-              <p className="text-gray-600 mt-2">
-                <strong>Agent ID:</strong> {property.agentId}
+
+          {/* Location Map Section */}
+          <div className="mt-8">
+            <h2 className="text-xl font-semibold mb-4">Location</h2>
+            <div className="bg-gray-100 p-4 rounded-lg">
+              <p className="text-gray-700 mb-4">
+                <strong>Address:</strong> {property.location}, {property.city}
               </p>
-            )}
+              
+              {hasCoordinates ? (
+                <div className="h-96 rounded-lg overflow-hidden">
+                  <PropertyMap singleProperty={property} />
+                </div>
+              ) : (
+                <div className="h-64 rounded-lg overflow-hidden">
+                  <StaticMap 
+                    location={property.location} 
+                    city={property.city}
+                  />
+                </div>
+              )}
+              
+              {!hasCoordinates && (
+                <p className="text-sm text-gray-500 mt-2">
+                  <em>Exact coordinates not available. Showing approximate location.</em>
+                </p>
+              )}
+            </div>
           </div>
+
+          {/* Video Gallery Section */}
+          {property.videos && property.videos.length > 0 && (
+            <div className="mt-8">
+              <h2 className="text-xl font-semibold mb-4">Property Videos</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {property.videos.map((videoUrl, index) => (
+                  <div key={index} className="bg-black rounded-lg overflow-hidden">
+                    <video 
+                      src={videoUrl}
+                      className="w-full h-64 object-cover"
+                      controls
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
