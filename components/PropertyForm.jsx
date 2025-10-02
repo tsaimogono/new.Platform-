@@ -282,7 +282,7 @@ const handleVideoUpload = async (e) => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div>
             <label htmlFor="price" className="block text-sm font-medium text-gray-700">
-              Price ($) *
+              Price (R) *
             </label>
             <input
               type="number"
