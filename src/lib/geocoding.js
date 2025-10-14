@@ -31,13 +31,19 @@ export async function geocodeAddress(address) {
     return null;
   }
 }
+
 export async function geocodeProperties(properties) {
   const delay = (ms) => new Promise((res) => setTimeout(res, ms));
 
   const geocodeWithDelay = async (property, index) => {
     await delay(index * 1000);
     const coords = await geocodeAddress(property.address);
-    return coords ? { ...property, ...coords } : null;
+    return coords
+      ? {
+          ...property,
+          coordinates: { lat: coords.latitude, lng: coords.longitude },
+        }
+      : null;
   };
 
   const results = await Promise.all(properties.map(geocodeWithDelay));

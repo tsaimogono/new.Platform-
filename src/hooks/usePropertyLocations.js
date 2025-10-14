@@ -12,10 +12,10 @@ export function usePropertyLocations(properties) {
         setLoading(true);
 
         const propertiesWithCoords = properties.filter(
-          (p) => p.latitude && p.longitude
+          (p) => p.coordinates?.lat && p.coordinates?.lng
         );
         const propertiesWithoutCoords = properties.filter(
-          (p) => !p.latitude || !p.longitude
+          (p) => !p.coordinates?.lat || !p.coordinates?.lng
         );
 
         const newlyGeocoded = await geocodeProperties(propertiesWithoutCoords);
