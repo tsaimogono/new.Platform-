@@ -12,7 +12,8 @@ export const authOptions = {
       name: 'credentials',
       credentials: {
         email: { label: 'Email', type: 'email' },
-        password: { label: 'Password', type: 'password' }
+        password: { label: 'Password', type: 'password' },
+        role: { label: 'Role', type: 'text' } // Add role for super admin login
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
@@ -34,12 +35,24 @@ export const authOptions = {
         if (!isValid) {
           throw new Error('Invalid password')
         }
+
+        // Check role authorization for super admin
+        if (credentials.role === 'super_admin' && user.role !== 'super_admin') {
+          throw new Error('Not authorized as Super Admin')
+        }
+
+        // Update last login
+        await usersCollection.updateOne(
+          { _id: user._id },
+          { $set: { lastLogin: new Date() } }
+        )
         
         return {
           id: user._id.toString(),
           email: user.email,
           role: user.role,
-          name: user.name
+          name: user.name,
+          agency: user.agency
         }
       }
     })
@@ -52,6 +65,7 @@ export const authOptions = {
       if (user) {
         token.role = user.role
         token.id = user.id
+        token.agency = user.agency
       }
       return token
     },
@@ -59,6 +73,7 @@ export const authOptions = {
       if (token) {
         session.user.role = token.role
         session.user.id = token.id
+        session.user.agency = token.agency
       }
       return session
     }
